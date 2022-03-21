@@ -1,0 +1,108 @@
+name: CI
+
+on: [pull_request]
+
+jobs:
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        buildType: [Debug, Release]
+        compiler: [gcc, clang]
+    env:
+      BUILDTYPE: ${{ matrix.buildType }}
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: Dependencies
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+      run: |
+        sudo apt update
+        sudo apt install -y libcurl4-openssl-dev
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          sudo apt install -y clang
+          echo "::set-env name=CC::clang"
+          echo "::set-env name=CXX::clang++"
+        fi
+    - name: Build it
+      run: make
+    - name: Test it
+      run: make test
+    - name: Test it (advanced)
+      run: make test-advanced
+  build-macos:
+    name: macOS
+    runs-on: macOS-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        buildType: [Debug, Release]
+    env:
+      BUILDTYPE: ${{ matrix.buildType }}
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: Build it
+      run: make
+    - name: Test it
+      run: make test
+    - name: Test it (advanced)
+      run: make test-advanced
+  build-alpine:
+    name: Alpine Linux
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        buildType: [Debug, Release]
+    env:
+      BUILDTYPE: ${{ matrix.buildType }}
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: Prepare
+      run: apk add build-base cmake curl-dev --update-cache
+    - name: Build it
+      run: make
+    - name: Test it
+      run: make test
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sys:
+          - mingw64
+          - clang64
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{matrix.sys}}
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          curl-winssl:p
+          toolchain:p
+          cmake:p
+          ninja:p
+    - name: Build it
+      run: make
+    - name: Test it
+      run: make test

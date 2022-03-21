@@ -1,0 +1,8 @@
+[submodule "deps/libuv"]
+	path = deps/libuv
+	url = https://github.com/libuv/libuv
+	branch = v1.x
+[submodule "deps/wasm3"]
+	path = deps/wasm3
+	url = https://github.com/saghul/wasm3.git
+	branch = v0.5-tjs
